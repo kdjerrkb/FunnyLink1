@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>搞怪连连看</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Zcool+KuaiLe&display=swap');
+      
+      body {
+        font-family: 'Zcool KuaiLe', sans-serif; /* A playful font usually available via fallback or webfont */
+        background-color: #fce7f3; /* Light pinkish background */
+        overflow: hidden; /* Prevent scrolling on mobile */
+      }
+      
+      /* Custom scrollbar for desktop if needed */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #fbcfe8;
+        border-radius: 4px;
+      }
+
+      .ball-shadow {
+        box-shadow: inset -5px -5px 10px rgba(0,0,0,0.2), 5px 5px 15px rgba(0,0,0,0.1);
+      }
+      
+      .game-bg {
+        background-image: radial-gradient(#f472b6 2px, transparent 2px), radial-gradient(#f472b6 2px, transparent 2px);
+        background-size: 32px 32px;
+        background-position: 0 0, 16px 16px;
+        background-color: #fdf2f8;
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+      }
+      
+      .animate-float {
+        animation: float 3s ease-in-out infinite;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
