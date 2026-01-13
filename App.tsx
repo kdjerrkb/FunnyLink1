@@ -8,7 +8,8 @@ import { GameState, Grid, Position, Tile, PathNode } from './types';
 import { EMOJIS, BOARD_WIDTH, BOARD_HEIGHT, BASE_TIME, TIME_DECREMENT_PER_LEVEL, MIN_TIME, TRANSLATIONS } from './constants';
 import { findPath, hasPossibleMoves, findAvailablePair } from './utils/pathfinding';
 import { audioManager } from './utils/audio';
-import { Play, RotateCcw, Award, Settings as SettingsIcon } from 'lucide-react';
+import { Play, RotateCcw, Award, Settings as SettingsIcon, Crown } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 const getInitialTime = (level: number) => Math.max(MIN_TIME, BASE_TIME - (level - 1) * TIME_DECREMENT_PER_LEVEL);
 
@@ -19,15 +20,22 @@ interface FloatingBackgroundProps {
 
 const FloatingBackground: React.FC<FloatingBackgroundProps> = ({ variant }) => {
   const particles = useMemo(() => {
-    return Array.from({ length: 30 }).map((_, i) => ({
+    // Make menu super bubbly (50 bubbles), game less distracting (25)
+    const count = variant === 'menu' ? 50 : 25;
+    
+    return Array.from({ length: count }).map((_, i) => ({
       id: i,
       emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
       left: `${Math.random() * 100}%`,
-      duration: `${10 + Math.random() * 20}s`,
-      delay: `${Math.random() * -20}s`,
-      rotate: `${Math.random() * 360}deg`,
-      scale: 0.5 + Math.random() * 1.5,
-      opacity: variant === 'menu' ? 0.3 : 0.15
+      // Duration between 5s and 12s for a nice flow
+      duration: `${5 + Math.random() * 7}s`,
+      // Stagger start times significantly
+      delay: `${Math.random() * -12}s`,
+      // Large sway values (e.g., -100px to 100px)
+      sway: `${(Math.random() - 0.5) * 200}px`, 
+      // Varied sizes
+      size: 40 + Math.random() * 60, 
+      opacity: variant === 'menu' ? 0.7 : 0.3
     }));
   }, [variant]);
 
@@ -47,15 +55,17 @@ const FloatingBackground: React.FC<FloatingBackgroundProps> = ({ variant }) => {
       {particles.map((p) => (
         <div
           key={p.id}
-          className="emoji-particle select-none pointer-events-none"
+          className="emoji-bubble"
           style={{
             '--left': p.left,
             '--duration': p.duration,
             '--delay': p.delay,
-            '--rotate': p.rotate,
+            '--sway': p.sway,
             '--opacity': p.opacity,
-            fontSize: `${p.scale * 4}rem`,
-            filter: variant === 'menu' ? 'blur(1px)' : 'none'
+            width: `${p.size}px`,
+            height: `${p.size}px`,
+            fontSize: `${p.size * 0.6}px`, // Emoji slightly smaller than the bubble
+            filter: variant === 'menu' ? 'none' : 'grayscale(30%)'
           } as React.CSSProperties}
         >
           {p.emoji}
@@ -76,6 +86,7 @@ const App: React.FC = () => {
     timeLeft: BASE_TIME,
     status: 'menu',
     highScore: 0,
+    maxLevel: 1, // Default
     bombs: 1,
     hints: 1
   });
@@ -115,10 +126,44 @@ const App: React.FC = () => {
   // --- Initialization ---
   useEffect(() => {
     const savedScore = localStorage.getItem('funnyLinkHighScore');
-    if (savedScore) setGameState(prev => ({ ...prev, highScore: parseInt(savedScore, 10) }));
+    const savedLevel = localStorage.getItem('funnyLinkMaxLevel');
+    setGameState(prev => ({ 
+      ...prev, 
+      highScore: savedScore ? parseInt(savedScore, 10) : 0,
+      maxLevel: savedLevel ? parseInt(savedLevel, 10) : 1
+    }));
     
     // Attempt to init audio if user interacted before (mostly for reload)
     // Real init happens on 'Start Game'
+  }, []);
+
+  // --- Confetti Effect (Win) ---
+  const runWinEffect = useCallback(() => {
+    const duration = 3000;
+    const end = Date.now() + duration;
+    const colors = ['#ec4899', '#8b5cf6', '#eab308', '#22c55e', '#ef4444', '#3b82f6'];
+
+    (function frame() {
+      confetti({
+        particleCount: 3,
+        angle: 270,
+        spread: 180,
+        origin: { x: Math.random(), y: -0.1 },
+        colors: colors,
+        startVelocity: 15 + Math.random() * 20,
+        gravity: 0.8 + Math.random() * 0.5,
+        scalar: 0.8 + Math.random() * 1.0,
+        drift: (Math.random() - 0.5) * 2,
+        ticks: 200,
+        shapes: ['circle', 'square'],
+        disableForReducedMotion: true,
+        zIndex: 200
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    }());
   }, []);
 
   const initLevel = useCallback((level: number, currentScore: number) => {
@@ -195,11 +240,22 @@ const App: React.FC = () => {
         setGameState(prev => {
           if (prev.timeLeft <= 1) {
              if (timerRef.current) clearInterval(timerRef.current);
+             
+             // Update records
              const newHigh = Math.max(prev.score, prev.highScore);
+             const newMaxLevel = Math.max(prev.level, prev.maxLevel);
              localStorage.setItem('funnyLinkHighScore', newHigh.toString());
+             localStorage.setItem('funnyLinkMaxLevel', newMaxLevel.toString());
+             
              playSound('lose');
              audioManager.stopBgm();
-             return { ...prev, timeLeft: 0, status: 'game-over', highScore: newHigh };
+             return { 
+               ...prev, 
+               timeLeft: 0, 
+               status: 'game-over', 
+               highScore: newHigh,
+               maxLevel: newMaxLevel
+             };
           }
           return { ...prev, timeLeft: prev.timeLeft - 1 };
         });
@@ -231,19 +287,26 @@ const App: React.FC = () => {
         const newScore = gameState.score + bonus;
         setGameState(prev => ({ ...prev, score: newScore, status: 'level-success' }));
         playSound('win');
+        
+        // Trigger the full screen confetti rain
+        runWinEffect();
+
         setTimeout(() => {
           nextLevel();
-        }, 1500);
+        }, 3000); // Increased wait time to enjoy the confetti
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [grid, gameState.status]);
+  }, [grid, gameState.status, runWinEffect]);
 
   // --- Interaction & Core Logic ---
   const executeMatch = (pos1: Position, pos2: Position, isAuto: boolean = false) => {
     const currentTime = gameState.timeLeft;
     const timeDelta = lastMatchTimeRef.current - currentTime;
     
+    // Identify the emoji being matched
+    // const matchedEmoji = grid[pos1.y][pos1.x]?.type;
+
     let rewardMsg = null;
     let earnedBomb = 0;
     let earnedHint = 0;
@@ -398,11 +461,23 @@ const App: React.FC = () => {
             
             <p className="text-gray-500 mb-10 font-bold text-2xl tracking-[0.2em] uppercase text-pink-400">{t.subtitle}</p>
             
-            <div className="mb-10 bg-gradient-to-r from-pink-50 to-purple-50 p-6 rounded-3xl border-2 border-pink-100 shadow-inner">
-               <div className="text-base text-pink-400 mb-2 flex justify-center items-center gap-2 font-bold uppercase tracking-wide">
-                 <Award size={20}/> {t.highScore}
+            {/* Stats Grid - Now shows both Score and Level */}
+            <div className="mb-10 grid grid-cols-2 gap-4">
+               {/* High Score */}
+               <div className="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-3xl border-2 border-pink-100 shadow-inner flex flex-col items-center justify-center">
+                  <div className="text-sm text-pink-400 mb-1 flex items-center gap-1 font-bold uppercase tracking-wide">
+                    <Award size={16}/> {t.highScore}
+                  </div>
+                  <div className="text-4xl font-black text-pink-500 drop-shadow-sm">{gameState.highScore}</div>
                </div>
-               <div className="text-6xl font-black text-pink-500 drop-shadow-sm">{gameState.highScore}</div>
+
+               {/* Max Level */}
+               <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-3xl border-2 border-yellow-100 shadow-inner flex flex-col items-center justify-center">
+                  <div className="text-sm text-yellow-500 mb-1 flex items-center gap-1 font-bold uppercase tracking-wide">
+                    <Crown size={16}/> {t.maxLevel}
+                  </div>
+                  <div className="text-4xl font-black text-yellow-500 drop-shadow-sm">{gameState.maxLevel}</div>
+               </div>
             </div>
 
             <button 
@@ -469,6 +544,10 @@ const App: React.FC = () => {
   return (
     <div className="h-screen w-full flex flex-col items-center py-2 px-2 overflow-hidden relative">
       <FloatingBackground variant="game" />
+      
+      {/* Funny Background Pattern (Behind Board) */}
+      <div className="absolute inset-0 z-0 funny-bg"></div>
+      
 
       {comboMessage && (
         <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none">

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { RefreshCw, Clock, Trophy, Lightbulb, Bomb, Pause, Menu } from 'lucide-react';
+import { RefreshCw, Clock, Trophy, Lightbulb, Bomb, Pause } from 'lucide-react';
 
 interface HeaderProps {
   score: number;
@@ -24,7 +24,8 @@ const Header: React.FC<HeaderProps> = ({
   const timePercent = (timeLeft / totalTime) * 100;
   
   return (
-    <div className="w-full max-w-2xl mx-auto mb-2 flex flex-col gap-3 px-3 pt-2">
+    // Added relative and z-30 to ensure it's above everything else
+    <div className="w-full max-w-2xl mx-auto mb-2 flex flex-col gap-3 px-3 pt-2 relative z-30">
       {/* Top Bar: Level & Score & Controls */}
       <div className="flex justify-between items-start">
          
@@ -39,24 +40,22 @@ const Header: React.FC<HeaderProps> = ({
          </div>
          
          {/* Center: Level Badge */}
-         <div className="absolute left-1/2 transform -translate-x-1/2 top-3 z-10">
+         <div className="absolute left-1/2 transform -translate-x-1/2 top-3 z-10 pointer-events-none">
             <div className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-6 py-1.5 rounded-full text-xl font-black shadow-[0_4px_0_rgba(234,179,8,1)] border-2 border-white transform -rotate-1 flex items-center gap-2">
               <span className="drop-shadow-sm">{t.level.replace('{n}', level)}</span>
             </div>
          </div>
 
-         {/* Right: Tools & Pause */}
+         {/* Right: Pause Button - Made more prominent */}
          <div className="flex flex-col items-end gap-2">
-            
-            {/* System Menu Button */}
             <button 
               onClick={onPause}
-              className="bg-white p-2.5 rounded-xl shadow-[0_3px_0_#e5e7eb] text-gray-600 border-2 border-gray-200 active:shadow-none active:translate-y-[3px] active:bg-gray-50 transition-all hover:text-purple-500"
-              aria-label="Pause Menu"
+              className="bg-pink-500 p-2.5 rounded-xl shadow-[0_3px_0_#be185d] text-white border-2 border-pink-400 active:shadow-none active:translate-y-[3px] active:bg-pink-600 transition-all hover:bg-pink-400"
+              aria-label="Pause Game"
+              title={t.pause}
             >
-              <Menu size={24} strokeWidth={2.5} />
+              <Pause size={24} strokeWidth={3} fill="currentColor" />
             </button>
-            
          </div>
       </div>
 
@@ -79,7 +78,7 @@ const Header: React.FC<HeaderProps> = ({
             </div>
          </div>
 
-         {/* Props Group - Moved next to timer for better reachability */}
+         {/* Props Group */}
          <div className="flex gap-2">
             <button 
               onClick={onShuffle}

@@ -21,6 +21,7 @@ export interface GameState {
   timeLeft: number;
   status: 'menu' | 'playing' | 'level-success' | 'game-over';
   highScore: number;
+  maxLevel: number; // New field for highest level reached
   bombs: number;
   hints: number;
 }

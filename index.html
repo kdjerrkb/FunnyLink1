@@ -11,12 +11,11 @@
       @import url('https://fonts.googleapis.com/css2?family=Zcool+KuaiLe&display=swap');
       
       body {
-        font-family: 'Zcool KuaiLe', sans-serif; /* A playful font usually available via fallback or webfont */
-        background-color: #fce7f3; /* Light pinkish background */
-        overflow: hidden; /* Prevent scrolling on mobile */
+        font-family: 'Zcool KuaiLe', sans-serif;
+        background-color: #fce7f3;
+        overflow: hidden;
       }
       
-      /* Custom scrollbar for desktop if needed */
       ::-webkit-scrollbar {
         width: 8px;
       }
@@ -36,7 +35,7 @@
         background-color: #fdf2f8;
       }
 
-      /* Floating Animation for Tile */
+      /* Floating Animation for Game Tiles */
       @keyframes float {
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-4px); }
@@ -64,20 +63,92 @@
         z-index: 20;
       }
 
-      /* Floating Background Emojis */
-      @keyframes floatUp {
-        0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
-        10% { opacity: var(--opacity); }
-        90% { opacity: var(--opacity); }
-        100% { transform: translateY(-10vh) rotate(var(--rotate)); opacity: 0; }
+      /* 
+         CRAZY BUBBLE RISE ANIMATION 
+      */
+      @keyframes crazyBubbleRise {
+        0% { 
+          transform: translateY(110vh) translateX(0) rotate(0deg) scale(0.6); 
+          opacity: 0; 
+        }
+        10% { 
+          opacity: var(--opacity); 
+          transform: translateY(100vh) translateX(0) rotate(0deg) scale(0.8);
+        }
+        25% {
+          transform: translateY(75vh) translateX(calc(var(--sway) * -1)) rotate(10deg) scale(0.9);
+        }
+        50% { 
+          transform: translateY(50vh) translateX(var(--sway)) rotate(-10deg) scale(1); 
+        }
+        75% {
+          transform: translateY(25vh) translateX(calc(var(--sway) * -0.5)) rotate(5deg) scale(1.1);
+          opacity: var(--opacity);
+        }
+        90% {
+          transform: translateY(5vh) translateX(0) rotate(0deg) scale(1.2);
+          opacity: var(--opacity);
+        }
+        100% { 
+          /* THE POP EFFECT */
+          transform: translateY(-10vh) translateX(0) rotate(0deg) scale(3); 
+          opacity: 0; 
+        }
       }
-      .emoji-particle {
+
+      /* 
+         RAIN DOWN ANIMATION
+      */
+      @keyframes rainDown {
+        0% {
+          transform: translateY(-10vh) rotate(0deg) scale(0.5);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+          transform: translateY(0vh) rotate(45deg) scale(1);
+        }
+        100% {
+          transform: translateY(110vh) rotate(360deg) scale(1);
+          opacity: 1;
+        }
+      }
+
+      .emoji-bubble {
         position: absolute;
-        bottom: -10vh;
-        animation: floatUp var(--duration) linear infinite;
-        animation-delay: var(--delay);
+        bottom: -20vh;
         left: var(--left);
+        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(255,255,255,0.2) 60%, rgba(255,255,255,0) 80%);
+        box-shadow: inset -2px -2px 8px rgba(0,0,0,0.05);
+        border-radius: 50%;
+        backdrop-filter: blur(2px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: crazyBubbleRise var(--duration) linear infinite;
+        animation-delay: var(--delay);
         will-change: transform, opacity;
+        z-index: 0;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .emoji-rain {
+        position: absolute;
+        top: -10vh;
+        left: var(--left);
+        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0.1) 60%, rgba(255,255,255,0) 80%);
+        box-shadow: inset -2px -2px 6px rgba(0,0,0,0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: rainDown var(--duration) cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
+        animation-delay: var(--delay);
+        will-change: transform;
+        z-index: 40;
+        pointer-events: none;
+        user-select: none;
       }
 
       /* Pop In Animation for Modals */
@@ -89,6 +160,92 @@
       .animate-pop-in {
         animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
       }
+
+      /* --- NEW: Hollow Spinning Rainbow Border --- */
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      .hollow-rainbow-border {
+        position: absolute;
+        /* Position it slightly outside the parent to frame it */
+        inset: -4px; 
+        z-index: 5;
+        border-radius: 1rem;
+        padding: 4px; /* The thickness of the border */
+        
+        /* This magic creates a hollow center using CSS Masks */
+        -webkit-mask: 
+           linear-gradient(#fff 0 0) content-box, 
+           linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        
+        pointer-events: none; /* Let clicks pass through to the game */
+        overflow: hidden;
+      }
+
+      .hollow-rainbow-border::before {
+        content: '';
+        position: absolute;
+        top: -50%; left: -50%; width: 200%; height: 200%;
+        background: conic-gradient(
+          from 0deg, 
+          #ff0055, #ff7f00, #ffff00, #00ff00, #00eaff, #0055ff, #8f00ff, #ff0055
+        );
+        animation: spin 3s linear infinite;
+      }
+      
+      /* Optional glow to make the light look more "light-like" */
+      .hollow-rainbow-border::after {
+         content: '';
+         position: absolute;
+         top: -50%; left: -50%; width: 200%; height: 200%;
+         background: conic-gradient(
+          from 0deg, 
+          #ff0055, #ff7f00, #ffff00, #00ff00, #00eaff, #0055ff, #8f00ff, #ff0055
+        );
+        filter: blur(10px);
+        opacity: 0.6;
+        animation: spin 3s linear infinite;
+        z-index: -1;
+      }
+
+      /* --- NEW: Funny Background Pattern (Behind Game) --- */
+      .funny-bg {
+        background-color: #fff5f7;
+        /* A funny seamless pattern of doodles */
+        background-image: 
+          radial-gradient(circle at 10% 10%, #ffdee2 5%, transparent 6%),
+          radial-gradient(circle at 90% 80%, #e0f2fe 8%, transparent 9%),
+          url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 40 Q40 50 50 40 T70 40' stroke='%23ff99cc' fill='none' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='35' cy='30' r='3' fill='%23333'/%3E%3Ccircle cx='65' cy='30' r='3' fill='%23333'/%3E%3Cpath d='M20 70 Q50 90 80 70' stroke='%23ffcc00' fill='none' stroke-width='3' stroke-linecap='round' opacity='0.5'/%3E%3C/svg%3E");
+        background-size: 60px 60px, 80px 80px, 120px 120px;
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        z-index: -2;
+        opacity: 0.8;
+      }
+      
+      /* Distinct funny characters in background corners */
+      .funny-bg::before {
+        content: "👻";
+        position: absolute;
+        bottom: 5%; left: 5%;
+        font-size: 150px;
+        opacity: 0.1;
+        transform: rotate(20deg);
+        filter: blur(1px);
+      }
+      .funny-bg::after {
+        content: "👽";
+        position: absolute;
+        top: 15%; right: 5%;
+        font-size: 120px;
+        opacity: 0.1;
+        transform: rotate(-20deg);
+        filter: blur(1px);
+      }
     </style>
   <script type="importmap">
 {
@@ -98,7 +255,8 @@
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "vite": "https://esm.sh/vite@^7.3.1"
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "canvas-confetti": "https://esm.sh/canvas-confetti@1.9.2"
   }
 }
 </script>
