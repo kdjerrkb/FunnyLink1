@@ -36,8 +36,8 @@ const Tile: React.FC<TileProps> = ({ emoji, selected, onClick, hint, isObstacle 
       className={`
         relative w-full h-full flex items-center justify-center 
         cursor-pointer transition-all duration-200
-        ${selected ? 'scale-110 z-10' : 'hover:scale-105 active:scale-95'}
-        ${hint ? 'animate-pulse' : ''}
+        ${selected ? 'scale-110 z-30' : 'hover:scale-105 active:scale-95'}
+        ${hint ? 'z-30' : 'z-0'}
       `}
       onClick={onClick}
     >
@@ -46,10 +46,10 @@ const Tile: React.FC<TileProps> = ({ emoji, selected, onClick, hint, isObstacle 
         className={`
           w-[96%] h-[96%] rounded-full ball-shadow border-2
           ${selected ? 'bg-yellow-200 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.6)]' : 'bg-white border-pink-200'}
+          ${hint ? 'bg-yellow-100 border-yellow-500 animate-hint' : 'animate-float'}
           flex items-center justify-center
-          animate-float
         `}
-        style={{ animationDelay }}
+        style={{ animationDelay: hint ? '0s' : animationDelay }}
       >
         {/* Emoji - Increased size significantly */}
         <span className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl select-none leading-none filter drop-shadow-sm">
