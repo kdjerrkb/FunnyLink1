@@ -78,6 +78,40 @@ const FloatingBackground: React.FC<FloatingBackgroundProps> = ({ variant }) => {
   );
 };
 
+// --- Gravity Helper Logic ---
+const applyGravity = (grid: Grid): Grid => {
+  const height = grid.length;
+  const width = grid[0].length;
+  // Create a deep-ish structure copy for the new grid
+  const newGrid: Grid = Array.from({ length: height }, () => Array(width).fill(null));
+
+  for (let x = 0; x < width; x++) {
+    // 1. Extract non-null tiles from the column
+    const colTiles: Tile[] = [];
+    for (let y = 0; y < height; y++) {
+      const tile = grid[y][x];
+      if (tile !== null) {
+        colTiles.push(tile);
+      }
+    }
+
+    // 2. Place them at the bottom of the new grid column
+    // The number of empty spaces at the top
+    const emptyCount = height - colTiles.length;
+    
+    for (let i = 0; i < colTiles.length; i++) {
+       const tile = colTiles[i];
+       const newY = emptyCount + i;
+       
+       // Clone tile and update its internal coordinates
+       const newTile = { ...tile, x: x, y: newY };
+       newGrid[newY][x] = newTile;
+    }
+    // The top 'emptyCount' rows remain null, which is correct
+  }
+  return newGrid;
+};
+
 const App: React.FC = () => {
   // --- State ---
   const [gameState, setGameState] = useState<GameState>({
@@ -96,6 +130,7 @@ const App: React.FC = () => {
   const [path, setPath] = useState<PathNode[] | null>(null);
   const [hintPairs, setHintPairs] = useState<Position[] | null>(null);
   const [comboMessage, setComboMessage] = useState<string | null>(null);
+  const [cursorPos, setCursorPos] = useState<Position>({ x: 0, y: 0 });
   
   // New States
   const [isPaused, setIsPaused] = useState(false);
@@ -217,6 +252,7 @@ const App: React.FC = () => {
     setPath(null);
     setHintPairs(null);
     setIsPaused(false);
+    setCursorPos({ x: 0, y: 0 });
     lastMatchTimeRef.current = newTime;
     
     // Ensure BGM is playing
@@ -325,10 +361,19 @@ const App: React.FC = () => {
     }
 
     lastMatchTimeRef.current = currentTime;
-    const newGrid = grid.map(row => [...row]);
-    newGrid[pos1.y][pos1.x] = null;
-    newGrid[pos2.y][pos2.x] = null;
-    setGrid(newGrid);
+    
+    // Create intermediate grid with removed tiles
+    const intermediateGrid = grid.map(row => [...row]);
+    intermediateGrid[pos1.y][pos1.x] = null;
+    intermediateGrid[pos2.y][pos2.x] = null;
+
+    // Apply Gravity if Level >= 2
+    let finalGrid = intermediateGrid;
+    if (gameState.level >= 2) {
+      finalGrid = applyGravity(intermediateGrid);
+    }
+
+    setGrid(finalGrid);
 
     setGameState(prev => ({
       ...prev, score: prev.score + 20, bombs: prev.bombs + earnedBomb, hints: prev.hints + earnedHint
@@ -437,10 +482,74 @@ const App: React.FC = () => {
     setGameState(prev => ({ ...prev, status: 'menu' }));
   };
 
+  // --- Keyboard Handler ---
+  useEffect(() => {
+    if (gameState.status !== 'playing' || isPaused) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent scrolling with arrows and space
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+        e.preventDefault();
+      }
+
+      switch (e.key) {
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+          setCursorPos(prev => ({ ...prev, y: Math.max(0, prev.y - 1) }));
+          break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+          setCursorPos(prev => ({ ...prev, y: Math.min(BOARD_HEIGHT - 1, prev.y + 1) }));
+          break;
+        case 'ArrowLeft':
+        case 'a':
+        case 'A':
+          setCursorPos(prev => ({ ...prev, x: Math.max(0, prev.x - 1) }));
+          break;
+        case 'ArrowRight':
+        case 'd':
+        case 'D':
+          setCursorPos(prev => ({ ...prev, x: Math.min(BOARD_WIDTH - 1, prev.x + 1) }));
+          break;
+        case 'Enter':
+        case ' ':
+          handleTileClick(cursorPos);
+          break;
+        case 'r':
+        case 'R':
+          shuffleBoard();
+          break;
+        case 'h':
+        case 'H':
+          handleUseHint();
+          break;
+        case 'b':
+        case 'B':
+          handleUseBomb();
+          break;
+        case 'p':
+        case 'P':
+        case 'Escape':
+          setIsPaused(true);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState.status, isPaused, cursorPos, grid, gameState.bombs, gameState.hints]); // Added necessary deps
+
+  // Update cursor if mouse hovers (optional, to unify mouse/keyboard)
+  const handleTileHover = useCallback((pos: Position) => {
+      setCursorPos(pos);
+  }, []);
+
   // Scene: Menu
   if (gameState.status === 'menu') {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      <div className="h-[100dvh] w-full flex flex-col items-center justify-center p-4 relative overflow-hidden">
          <FloatingBackground variant="menu" />
          
          {/* Increased box size: max-w-xl and larger internal padding */}
@@ -510,7 +619,7 @@ const App: React.FC = () => {
   // Scene: Game Over
   if (gameState.status === 'game-over') {
     return (
-      <div className="h-screen w-full game-bg flex flex-col items-center justify-center p-4">
+      <div className="h-[100dvh] w-full game-bg flex flex-col items-center justify-center p-4">
          <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border-4 border-red-100 max-w-sm w-full text-center relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-2 bg-red-400"></div>
             
@@ -542,7 +651,7 @@ const App: React.FC = () => {
 
   // Scene: Playing
   return (
-    <div className="h-screen w-full flex flex-col items-center py-2 px-2 overflow-hidden relative">
+    <div className="h-[100dvh] w-full flex flex-col items-center py-2 px-2 overflow-hidden relative">
       <FloatingBackground variant="game" />
       
       {/* Funny Background Pattern (Behind Board) */}
@@ -601,13 +710,21 @@ const App: React.FC = () => {
         t={t}
       />
       
-      <div className="flex-1 w-full min-h-0 flex items-center justify-center py-2 z-10">
+      {/* 
+         The Board Container 
+         flex-1: Takes up remaining vertical space
+         min-h-0: Allows it to shrink smaller than content if needed (crucial for flex)
+         w-full: Full width
+      */}
+      <div className="flex-1 w-full min-h-0 flex items-center justify-center py-1 z-10">
         <Board 
           grid={grid} 
           selectedPos={selectedPos} 
           onTileClick={handleTileClick}
+          onTileHover={handleTileHover}
           path={path}
           hintPairs={hintPairs}
+          cursorPos={cursorPos}
         />
       </div>
     </div>

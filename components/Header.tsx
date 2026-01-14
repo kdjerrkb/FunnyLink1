@@ -50,7 +50,7 @@ const Header: React.FC<HeaderProps> = ({
          <div className="flex flex-col items-end gap-2">
             <button 
               onClick={onPause}
-              className="bg-pink-500 p-2.5 rounded-xl shadow-[0_3px_0_#be185d] text-white border-2 border-pink-400 active:shadow-none active:translate-y-[3px] active:bg-pink-600 transition-all hover:bg-pink-400"
+              className="bg-pink-500 p-3 rounded-xl shadow-[0_3px_0_#be185d] text-white border-2 border-pink-400 active:shadow-none active:translate-y-[3px] active:bg-pink-600 transition-all hover:bg-pink-400"
               aria-label="Pause Game"
               title={t.pause}
             >
@@ -78,26 +78,26 @@ const Header: React.FC<HeaderProps> = ({
             </div>
          </div>
 
-         {/* Props Group */}
+         {/* Props Group - Increased padding for touch targets */}
          <div className="flex gap-2">
             <button 
               onClick={onShuffle}
-              className="bg-white p-2 rounded-xl shadow-sm text-pink-400 border-2 border-pink-100 active:scale-95 hover:bg-pink-50 transition-all"
+              className="bg-white p-3 rounded-xl shadow-sm text-pink-400 border-2 border-pink-100 active:scale-95 hover:bg-pink-50 transition-all"
               title="Shuffle"
             >
-              <RefreshCw size={18} strokeWidth={2.5} />
+              <RefreshCw size={20} strokeWidth={2.5} />
             </button>
 
             <button 
               onClick={onUseHint}
               disabled={hints <= 0}
-              className={`relative p-2 rounded-xl border-2 transition-all active:scale-95 ${
+              className={`relative p-3 rounded-xl border-2 transition-all active:scale-95 ${
                 hints > 0 
                   ? 'bg-yellow-50 border-yellow-200 text-yellow-500 shadow-sm hover:bg-yellow-100' 
                   : 'bg-gray-100 border-gray-200 text-gray-300'
               }`}
             >
-              <Lightbulb size={18} fill={hints > 0 ? "currentColor" : "none"} strokeWidth={2.5} />
+              <Lightbulb size={20} fill={hints > 0 ? "currentColor" : "none"} strokeWidth={2.5} />
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold border-2 border-white shadow-sm">
                 {hints}
               </span>
@@ -106,13 +106,13 @@ const Header: React.FC<HeaderProps> = ({
             <button 
               onClick={onUseBomb}
               disabled={bombs <= 0}
-              className={`relative p-2 rounded-xl border-2 transition-all active:scale-95 ${
+              className={`relative p-3 rounded-xl border-2 transition-all active:scale-95 ${
                 bombs > 0 
                   ? 'bg-purple-50 border-purple-200 text-purple-500 shadow-sm hover:bg-purple-100' 
                   : 'bg-gray-100 border-gray-200 text-gray-300'
               }`}
             >
-              <Bomb size={18} strokeWidth={2.5} />
+              <Bomb size={20} strokeWidth={2.5} />
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold border-2 border-white shadow-sm">
                 {bombs}
               </span>
